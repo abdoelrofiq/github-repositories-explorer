@@ -2,7 +2,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 import { useEffect, useState } from "react";
 
 interface PaginationProps {
-  totalPages: number;
+  rowsPerPage: number;
   currentPage: number;
   totalRows: number;
   users: any;
@@ -10,13 +10,14 @@ interface PaginationProps {
 }
 
 export default function Pagination({
-  totalPages,
+  rowsPerPage,
   currentPage,
   totalRows,
   users,
   onPageChange,
 }: PaginationProps) {
   const [pageItems, setPageItems] = useState([]);
+  const totalPages = Math.ceil(totalRows / rowsPerPage);
 
   function getPaginationItems(currentPage, totalPages) {
     const range = [];

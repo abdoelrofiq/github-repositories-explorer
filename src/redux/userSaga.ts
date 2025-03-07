@@ -8,18 +8,22 @@ import {
 import { PayloadAction } from "@reduxjs/toolkit";
 
 function* fetchUsersSaga(
-  action: PayloadAction<{ query: string; perPage: number; page: number }>
+  action: PayloadAction<{ keyword: string; perPage: number; page: number }>
 ) {
   try {
-    const { query, perPage, page } = action.payload;
+    const { keyword, perPage, page } = action.payload;
     const response: { data: any } = yield call(
       axios.get,
-      `https://api.github.com/search/users?q=${query}&per_page=${perPage}&page=${page}`
+      `https://api.github.com/search/users?q=${keyword}&per_page=${perPage}&page=${page}`
     );
 
-    yield put(fetchUsersSuccess(response.data.items));
+    const users = response.data.items;
+    const totalRows = response.data.total_count;
+    yield put(fetchUsersSuccess({ users, totalRows }));
   } catch (error: any) {
-    yield put(fetchUsersFailure(error.message));
+    yield put(
+      fetchUsersFailure(error?.response?.data?.message ?? error.message)
+    );
   }
 }
 

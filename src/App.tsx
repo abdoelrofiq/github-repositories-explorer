@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
@@ -9,83 +9,79 @@ import {
 } from "@heroicons/react/24/solid";
 import Pagination from "./Pagination";
 import axios from "axios";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchUsersRequest } from "./redux/userSlice";
+import { RootState, AppDispatch } from "./redux/store";
+import Status from "./redux/status";
 
 function App() {
   const inputRef = useRef(null);
   const [searchValue, setSearchValue] = useState("");
   const [isShowing, setIsShowing] = useState(false);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [users_, setUsers] = useState([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalRows, setTotalRows] = useState(0);
+  const dispatch = useDispatch<AppDispatch>();
+  const { users, totalRows, loading, error, status } = useSelector(
+    (state: RootState) => state.users
+  );
+
+  useEffect(() => {
+    if (status === Status.Finish) {
+      setUsers([...users]);
+    }
+  }, [status]);
 
   const getUsers = (keyword, page) => {
-    setLoading(true);
-    setUsers([]);
-    setError(null);
-    axios
-      .get<Post[]>(
-        `https://api.github.com/search/users?q=${keyword}&per_page=${rowsPerPage}&page=${page}`
-      )
-      .then((response) => {
-        setTotalRows(response.data.total_count);
-        const pages = Math.ceil(response.data.total_count / rowsPerPage);
-        setTotalPages(pages);
-        response.data.items.map((user) => ({
-          ...user,
-          expanded: false,
-          loading: false,
-          repositories: [],
-          error: null,
-        }));
-        setUsers(response.data.items);
-        setLoading(false);
-      })
-      .catch((err) => {
-        const errorMessage = err?.response?.data?.message ?? err.message;
-        setError(errorMessage);
-        setLoading(false);
-      });
+    dispatch(fetchUsersRequest({ keyword, perPage: rowsPerPage, page }));
   };
 
   const getRepositories = (user) => {
     axios
       .get<Post[]>(`https://api.github.com/users/${user.login}/repos`)
       .then((response) => {
-        users.map((u) => {
+        const updatedUsers = users_.map((u) => {
           if (u.id === user.id) {
-            u.loading = false;
-            u.repositories = response.data;
+            return {
+              ...u,
+              expanded: true,
+              loading: false,
+              repositories: response.data,
+              error: null,
+            };
           }
+
+          return u;
         });
-        setUsers([...users]);
+        setUsers([...updatedUsers]);
       })
       .catch((err) => {
         const errorMessage = err?.response?.data?.message ?? err.message;
-        users.map((u) => {
+        const updatedUsers = users_.map((u) => {
           if (u.id === user.id) {
-            u.loading = false;
-            u.repositories = [];
-            u.error = errorMessage;
+            return {
+              ...u,
+              expanded: true,
+              loading: false,
+              repositories: [],
+              error: errorMessage,
+            };
           }
+
+          return u;
         });
-        setUsers([...users]);
+        setUsers([...updatedUsers]);
       });
   };
 
   const onSearch = () => {
     const currentValue = inputRef.current.value;
     setSearchValue(currentValue);
+    setUsers([]);
+    setCurrentPage(1);
 
     if (currentValue.length === 0) {
       setIsShowing(false);
-      setUsers([]);
-      setCurrentPage(1);
-      setTotalPages(0);
-      setTotalRows(0);
     } else {
       setIsShowing(true);
       getUsers(currentValue, 1);
@@ -93,22 +89,28 @@ function App() {
   };
 
   const handleClickOnUser = (user) => {
-    users.map((u) => {
+    const updatedUsers = users_.map((u) => {
       if (u.id === user.id) {
-        u.expanded = !u.expanded;
+        const expanded = !u.expanded;
 
-        if (u.expanded) {
-          u.loading = true;
+        if (expanded) {
           getRepositories(user);
-        } else {
-          u.loading = false;
         }
+
+        return {
+          ...u,
+          expanded,
+          loading: expanded ? true : false,
+        };
       }
+
+      return u;
     });
-    setUsers([...users]);
+    setUsers([...updatedUsers]);
   };
 
   const onPageChange = (page) => {
+    if (status === Status.Idle && error != null) return;
     if (page === "...") return;
 
     setCurrentPage(page);
@@ -133,14 +135,14 @@ function App() {
       <div className="flex flex-col gap-3">
         {loading ? (
           <div className="text-center p-4">Loading...</div>
-        ) : error ? (
+        ) : isShowing && error ? (
           <div className="text-center p-4 text-red-500">Error: {error}</div>
-        ) : users.length === 0 ? (
+        ) : users_.length === 0 ? (
           <div className="text-center p-4 text-gray-500">
             No users available
           </div>
         ) : (
-          users.map((user) => (
+          users_.map((user) => (
             <div key={user.id}>
               <div
                 className="flex justify-between items-center p-4 bg-gray-100 cursor-pointer"
@@ -195,13 +197,15 @@ function App() {
         )}
       </div>
 
-      <Pagination
-        totalPages={totalPages}
-        currentPage={currentPage}
-        totalRows={totalRows}
-        onPageChange={onPageChange}
-        users={users}
-      />
+      {isShowing && (
+        <Pagination
+          rowsPerPage={rowsPerPage}
+          currentPage={currentPage}
+          totalRows={totalRows}
+          onPageChange={onPageChange}
+          users={users}
+        />
+      )}
     </div>
   );
 }
