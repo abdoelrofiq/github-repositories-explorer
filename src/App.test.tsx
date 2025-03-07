@@ -1,7 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, test } from "vitest";
+import { expect, test } from "vitest";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
+import "@testing-library/jest-dom";
 
 test("should render input and search button", () => {
   render(<App />);

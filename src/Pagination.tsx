@@ -16,13 +16,10 @@ export default function Pagination({
   users,
   onPageChange,
 }: PaginationProps) {
-  const [pageItems, setPageItems] = useState([]);
+  const [pageItems, setPageItems] = useState<any[]>([]);
   const totalPages = Math.ceil(totalRows / rowsPerPage);
 
-  function getPaginationItems(currentPage, totalPages) {
-    const range = [];
-    const visiblePages = 3;
-
+  function getPaginationItems(currentPage: any, totalPages: any) {
     if (totalPages <= 6) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }

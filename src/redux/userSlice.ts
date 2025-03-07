@@ -30,7 +30,7 @@ const userSlice = createSlice({
       state.totalRows = 0;
       state.status = Status.Process;
     },
-    fetchUsersSuccess: (state, action: PayloadAction<User[]>) => {
+    fetchUsersSuccess: (state, action: PayloadAction<any>) => {
       state.loading = false;
       state.users = action.payload.users.map((user) => ({
         ...user,

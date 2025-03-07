@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import {
   ChevronDownIcon,
@@ -15,11 +13,11 @@ import { RootState, AppDispatch } from "./redux/store";
 import Status from "./redux/status";
 
 function App() {
-  const inputRef = useRef(null);
+  const inputRef = useRef<any>(null);
   const [searchValue, setSearchValue] = useState("");
   const [isShowing, setIsShowing] = useState(false);
-  const [users_, setUsers] = useState([]);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [users_, setUsers] = useState<any[]>([]);
+  const rowsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const dispatch = useDispatch<AppDispatch>();
   const { users, totalRows, loading, error, status } = useSelector(
@@ -32,13 +30,13 @@ function App() {
     }
   }, [status]);
 
-  const getUsers = (keyword, page) => {
+  const getUsers = (keyword: any, page: any) => {
     dispatch(fetchUsersRequest({ keyword, perPage: rowsPerPage, page }));
   };
 
-  const getRepositories = (user) => {
+  const getRepositories = (user: any) => {
     axios
-      .get<Post[]>(`https://api.github.com/users/${user.login}/repos`)
+      .get<any>(`https://api.github.com/users/${user.login}/repos`)
       .then((response) => {
         const updatedUsers = users_.map((u) => {
           if (u.id === user.id) {
@@ -75,7 +73,7 @@ function App() {
   };
 
   const onSearch = () => {
-    const currentValue = inputRef.current.value;
+    const currentValue = inputRef?.current?.value ?? "";
     setSearchValue(currentValue);
     setUsers([]);
     setCurrentPage(1);
@@ -88,7 +86,7 @@ function App() {
     }
   };
 
-  const handleClickOnUser = (user) => {
+  const handleClickOnUser = (user: any) => {
     const updatedUsers = users_.map((u) => {
       if (u.id === user.id) {
         const expanded = !u.expanded;
@@ -109,7 +107,7 @@ function App() {
     setUsers([...updatedUsers]);
   };
 
-  const onPageChange = (page) => {
+  const onPageChange = (page: any) => {
     if (status === Status.Idle && error != null) return;
     if (page === "...") return;
 
@@ -173,7 +171,7 @@ function App() {
                 ) : (
                   user.expanded &&
                   user.repositories.length > 0 &&
-                  user.repositories.map((repo, index) => (
+                  user.repositories.map((repo: any) => (
                     <div
                       key={repo.id}
                       className="flex flex-col p-2 bg-gray-200 ml-4 gap-2"
